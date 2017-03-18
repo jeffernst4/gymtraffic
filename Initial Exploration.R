@@ -5,10 +5,10 @@
 rm(list=ls())
 
 # Set working directory
-setwd("~/Data Science Projects/GymTraffic")
+setwd("~/Data Science Projects/gymtraffic")
 
 # Load csv
-gym_df <- read.csv("Data/data.csv")
+gym_df <- read.csv("data/data.csv")
 
 # Load libraries
 library(ggplot2)
