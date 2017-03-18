@@ -1,97 +1,152 @@
+
+# Setup -------------------------------------------------------------------
+
+# Clear environment
+rm(list=ls())
+
+# Set working directory
 setwd("~/Data Science Projects/gymtraffic")
 
-library(lubridate)
+# Load csv
+gym_df <- read.csv("data/data.csv")
 
-GymTraffic <- read.csv("Data/data.csv")
-
-
-#plan/ideas
-#identify day id, so we can use time series, from beginning of semester to end of semester with holidays as markers
-#convert timestamp to hour
-#days since beginning of semester
-#create query of day id
-#count actual days becaue they're not in order
-#remove 43 and 253 for visualizations
-#maybe consider day as going until 1am
-#time open and close
-#find a way to plot from 5am to 1am
+# Load libraries
+library(ggplot2)
 
 
 
-# Create New Variables ----------------------------------------------------
-
-#Create time
-GymTraffic$time <- seconds_to_period(GymTraffic$timestamp)
-
-#Create hour
-GymTraffic$hour <- hour(GymTraffic$time)
-
-#Create day_id
-# GymTraffic$day_id[1] <- 1
-# for (i in 2:nrow(GymTraffic)) {
-#   GymTraffic$day_id[i] <- ifelse(GymTraffic$timestamp[i] < GymTraffic$timestamp[i - 1], GymTraffic$day_id[i - 1] + 1, GymTraffic$day_id[i - 1])
-# }
-GymTraffic$day_id[1] <- 1
-for (i in 2:nrow(GymTraffic)) {
-  GymTraffic$day_id[i] <- ifelse(GymTraffic$timestamp[i - 1] < 10000 & GymTraffic$timestamp[i] > 10000, GymTraffic$day_id[i - 1] + 1, GymTraffic$day_id[i - 1])
-}
-
-#Clean invalid data due to weird day of week
-GymTraffic <- GymTraffic[1:26002, ]
+# Individual Variable Exploration -----------------------------------------
 
 
-
-# Initial Exploration -----------------------------------------------------
-
-#Temperature by day - median, min, max
-plot(aggregate(temperature ~ day_id, data = GymTraffic, FUN = median), type = "l")
-plot(aggregate(temperature ~ day_id, data = GymTraffic, FUN = max), type = "l", col = "red", ylim = c(40, 90))
-points(aggregate(temperature ~ day_id, data = GymTraffic, FUN = min), type = "l", col = "blue")
-
-#Identify days that are beginning of semester
-plot(GymTraffic$day_id, GymTraffic$is_start_of_semester, type = "l")
-unique(GymTraffic$day_id[GymTraffic$is_start_of_semester == 1])
-
-#Attendance by day, coloring beginning of semester
-plot(aggregate(number_people ~ day_id, data = GymTraffic, FUN = median), type = "l")
-
-#Attendance over time for a specific day id
-plot(GymTraffic$number_people[GymTraffic$day_id == 4], type = "l")
+# Number of people
+summary(gym_df$number_people)
+p1 <- ggplot(gym_df, aes(number_people))
+p1 +
+  geom_histogram(binwidth = 1) +
+  labs(title = "Gym Traffic Distribution", x = "Number of People", y = "Count")
 
 
+# Timestamp
+summary(gym_df$timestamp)
+p2 <- ggplot(gym_df, aes(timestamp))
+p2 +
+  geom_histogram(binwidth = 600) +
+  labs(title = "Timestamps Distribution", x = "Timestamp", y = "Count")
 
-# Query of Day ID ---------------------------------------------------------
 
-#Create variables
-people_max <- aggregate(number_people ~ day_id, GymTraffic, max)
-time_open <- aggregate(timestamp ~ day_id, GymTraffic, function(x) which.max(x > 10000))
+# Day of week
+summary(gym_df$day_of_week)
+p3 <- ggplot(gym_df, aes(day_of_week))
+p3 +
+  geom_histogram(binwidth = 1) +
+  labs(title = "Day of Week Distribution", x = "Day of Week", y = "Count")
 
-days_df <- data.frame(id = unique(GymTraffic$day_id), people_max)
 
-hist(GymTraffic$number_people, breaks = 100)
-max(GymTraffic$number_people)
-median(GymTraffic$number_people)
+# Weekend vs weekday
+prop.table(table(gym_df$is_weekend))
+p4 <- ggplot(gym_df, aes(factor(is_weekend, labels = c("Weekday", "Weekend"))))
+p4 +
+  geom_bar(aes(y = (..count..) / sum(..count..))) +
+  scale_y_continuous(labels = scales::percent) + 
+  labs(title = "Day Type Distribution", x = "Day Type", y = "Proportion") +
+  coord_flip()
 
-hist(GymTraffic$timestamp, breaks = 50)
-min(GymTraffic$timestamp[GymTraffic$timestamp > 10000])
-max(GymTraffic$timestamp[GymTraffic$timestamp < 10000])
 
-# gym opens at 5:15 am and closes at 1:00 am
-# determine day #
+# Holidays
+prop.table(table(gym_df$is_holiday))
+p5 <- ggplot(gym_df, aes(factor(is_holiday, labels = c("Not Holiday", "Holiday"))))
+p5 +
+  geom_bar(aes(y = (..count..) / sum(..count..))) +
+  scale_y_continuous(labels = scales::percent) + 
+  labs(title = "Day Type Distribution", x = "Day Type", y = "Proportion") +
+  coord_flip()
 
-plot(GymTraffic$timestamp, GymTraffic$number_people)
 
-hist(GymTraffic$day_of_week, breaks = 9)
+# Apparent temperature
+summary(gym_df$apparent_temperature)
+p2 <- ggplot(gym_df, aes(apparent_temperature))
+p2 +
+  geom_histogram(binwidth = 1) +
+  labs(title = "Apparent Temperature Distribution", x = "Apparent Temperature", y = "Count")
 
-table(GymTraffic$is_weekend, GymTraffic$day_of_week)
 
-#saturday is 5, sunday is 6
+# Temperature
+summary(gym_df$temperature)
+p2 <- ggplot(gym_df, aes(temperature))
+p2 +
+  geom_histogram(binwidth = 1) +
+  labs(title = "Temperature Distribution", x = "Temperature", y = "Count")
 
-table(GymTraffic$day_of_week, GymTraffic$is_holiday)
 
-plot(aggregate(number_people ~ day_of_week, data = GymTraffic, mean), type = "l", ylim = c(0, 50))
+# Start of semester
+prop.table(table(gym_df$is_start_of_semester))
+p5 <- ggplot(gym_df, aes(factor(is_start_of_semester, labels = c("Not Start", "Start"))))
+p5 +
+  geom_bar(aes(y = (..count..) / sum(..count..))) +
+  scale_y_continuous(labels = scales::percent) + 
+  labs(title = "Semester Start Distribution", x = "Semester Start Status", y = "Proportion") +
+  coord_flip()
 
-hist(GymTraffic$apparent_temperature, breaks = 30)
-hist(GymTraffic$temperature, breaks = 30)
 
-plot(aggregate(temperature ~ timestamp, data = GymTraffic, median), type = "l", ylim = c(50, 70))
+
+# Relationships -----------------------------------------------------------
+
+
+# Gym attendance by day type
+p1 <- ggplot(gym_df, aes(factor(is_weekend, labels = c("Weekday", "Weekend")), number_people))
+p1 +
+  stat_summary(fun.y = "mean", geom = "bar") +
+  labs(title = "Weekday vs Weekend Gym Attendance", x = "Day Type", y = "Mean Number of People")
+
+
+# Relationship of temperature with gym traffic
+p2 <- ggplot(gym_df, aes(temperature, number_people))
+p2 +
+  geom_point() +
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "ps")) +
+  labs(title = "Gym Attendance by Temperature", x = "Temperature", y = "Number of People")
+
+
+
+#####################################################
+
+
+
+# Start of semester effect
+SemesterHist <- qplot(gym_df$number_people,
+                      geom = "histogram",
+                      binwidth = 1,
+                      main = "Distribution of People in Gym by Part of Semester",
+                      xlab = "Number of People",
+                      color = factor(gym_df$is_start_of_semester))
+SemesterHist + scale_colour_discrete(name = "Start of Semester", labels = c("No", "Yes"))
+
+# Temperature
+TempPlot <- ggplot(gym_df, aes(temperature, apparent_temperature))
+TempPlot + geom_point()
+TempPlot + geom_point(aes(color = gym_df$number_people))
+
+# Relationship of temperature with gym traffic
+TempPeoplePlot <- ggplot(gym_df, aes(temperature, number_people))
+TempPeoplePlot +
+  geom_point() +
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "ps")) +
+  labs(title = "Gym Traffic by Temperature", x = "Temperature", y = "Number of People")
+
+#Create a custom color scale
+library(RColorBrewer)
+myColors <- brewer.pal(7, "Set")
+myColors <- c("#E41A1C", "#377EB8")
+SmoothColors <- c("#66C2A5", "#FC8D62")
+names(myColors) <- levels(dat$grp)
+colScale <- scale_colour_manual(name = "grp", values = myColors)
+
+# Relationship of timestamp with gym traffic
+TimePeoplePlot <- ggplot(gym_df, aes(timestamp, number_people, color = as.factor(is_weekend)))
+TimePeoplePlot <- ggplot(gym_df, aes(timestamp, number_people, color = as.factor(day_of_week)))
+TimePeoplePlot <- ggplot(gym_df, aes(timestamp, number_people, color = as.factor(is_holiday)))
+TimePeoplePlot +
+  geom_point() +
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "ps")) +
+  labs(title = "Gym Traffic by Timestamp", x = "Timestamp", y = "Number of People") +
+  scale_color_manual(name = "Weekend", values = myColors)
