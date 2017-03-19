@@ -8,7 +8,7 @@ rm(list=ls())
 setwd("~/Data Science Projects/gymtraffic")
 
 # Load csv
-gym_df <- read.csv("data/data.csv")
+gym_df <- read.csv("data/data.csv", stringsAsFactors = FALSE)
 
 # Load libraries
 library(ggplot2)
