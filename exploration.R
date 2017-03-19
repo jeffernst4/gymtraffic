@@ -17,7 +17,6 @@ library(ggplot2)
 
 # Individual Variable Exploration -----------------------------------------
 
-
 # Number of people
 summary(gym_df$number_people)
 p1 <- ggplot(gym_df, aes(number_people))
@@ -90,7 +89,6 @@ p5 +
 
 
 # Relationships -----------------------------------------------------------
-
 
 # Gym attendance by day type
 p1 <- ggplot(gym_df, aes(factor(is_weekend, labels = c("Weekday", "Weekend")), number_people))
