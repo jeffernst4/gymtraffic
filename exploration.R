@@ -108,6 +108,13 @@ p2 +
 
 #####################################################
 
+# Attendance by date with dashed lines showing breaks, holidays, and semester start/end for 15-16 school year
+p1 + geom_line() +
+  geom_vline(xintercept = c(as.numeric(as.Date("2016-12-25")), as.numeric(as.Date("2016-11-24")), as.numeric(as.Date("2015-11-26")), as.numeric(as.Date("2015-12-25"))), color = "red", linetype = "longdash") +
+  geom_vline(xintercept = c(as.numeric(as.Date("2015-08-26")), as.numeric(as.Date("2015-12-18")), as.numeric(as.Date("2016-01-19")), as.numeric(as.Date("2016-05-13")), as.numeric(as.Date("2016-08-24")), as.numeric(as.Date("2016-12-16")), as.numeric(as.Date("2017-01-17")), as.numeric(as.Date("2017-05-05"))), color = "blue", linetype = "longdash") +
+  geom_vline(xintercept = c(as.numeric(as.Date("2016-03-19")), as.numeric(as.Date("2016-03-27"))), color = "purple", linetype = "longdash") +
+  scale_x_date(date_breaks = '1 month', limits = c(as.Date("2015-08-14"), as.Date("2016-08-15")), date_labels = "%m")
+
 
 
 # Start of semester effect
