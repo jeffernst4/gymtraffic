@@ -73,4 +73,3 @@ gym_df$date[gym_df$date > "2016-04-15"] <- gym_df$date[gym_df$date > "2016-04-15
 
 
 
-
