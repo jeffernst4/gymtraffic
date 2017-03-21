@@ -31,6 +31,10 @@ end_date <- ymd(20160816)
 gym_df <- gym_df[gym_df$date %within% interval(start_date, end_date), ]
 
 
+# Remove low observation dates
+gym_df <- gym_df[!(gym_df$date == ymd(20160616)), ]
+
+
 # Remove variables
 # gym_df$is_holiday <- NULL
 # gym_df$is_start_of_semester <- NULL
@@ -113,6 +117,10 @@ gym_df$week <- 0
 gym_df$week[gym_df$semester != 0] <- ceiling(difftime(gym_df$date[gym_df$semester != 0] - gym_df$holiday_sum[gym_df$semester != 0] + 1, semester_start[gym_df$semester[gym_df$semester != 0]]) / 7)
 
 
+# Create day of the week variable
+gym_df$day_of_week <- wday(gym_df$date)
+
+
 # Create year variable
 gym_df$year <- year(gym_df$date)
 
@@ -125,8 +133,10 @@ gym_df$year <- year(gym_df$date)
 cols_factors <- c("day_of_week", "month", "hour", "semester", "week", "year")
 gym_df[, cols_factors] <- lapply(gym_df[, cols_factors], as.factor)
 
+
 #create a split index
 split_index <- createDataPartition(gym_df$number_people, p = .75, list = FALSE)
+
 
 #create train and test sets
 train <- gym_df[split_index, ]
@@ -137,15 +147,26 @@ test  <- gym_df[-split_index, ]
 model <- lm(number_people ~ timestamp + year + month + day_of_week + temperature + hour + semester + major_holiday + holiday_recess + academic_holiday + week + is_holiday + is_start_of_semester + is_during_semester, data = gym_df)
 
 #random forest
-model <- randomForest(number_people ~ day_of_week + temperature + precipitation + hour + semester + start_semester + during_semester + major_holiday + holiday_recess + academic_holiday + week, data = train, ntree = 40)
+model <- randomForest(number_people ~ day_of_week + temperature + precipitation + hour + semester + start_semester + during_semester + major_holiday + holiday_recess + academic_holiday + week, data = gym_df, ntree = 40)
 
-predictions <- predict(model, test)
+predictions <- predict(model, gym_df)
 summary(lm(test$number_people ~ predictions))
 varImpPlot(model)
 
 #support vector regression
 model <- svm(number_people ~ timestamp + year + month + day_of_week + temperature + hour + semester + major_holiday + holiday_recess + academic_holiday + week + is_start_of_semester + is_during_semester, data = train, scale = FALSE)
 
+
+
+# Attendance by date with dashed lines showing breaks, holidays, and semester start/end for 15-16 school year
+p1 <- ggplot(aggregate(cbind(number_people, predictions) ~ date, gym_df, mean), aes(date))
+p1 + geom_line(aes(y = number_people), color = "black") +
+  geom_line(aes(y = predictions), color = "red") +
+  # geom_vline(xintercept = c(as.numeric(as.Date("2016-12-25")), as.numeric(as.Date("2016-11-24")), as.numeric(as.Date("2015-11-26")), as.numeric(as.Date("2015-12-25"))), color = "red", linetype = "longdash") +
+  # geom_vline(xintercept = c(as.numeric(as.Date("2015-08-26")), as.numeric(as.Date("2015-12-18")), as.numeric(as.Date("2016-01-19")), as.numeric(as.Date("2016-05-13")), as.numeric(as.Date("2016-08-24")), as.numeric(as.Date("2016-12-16")), as.numeric(as.Date("2017-01-17")), as.numeric(as.Date("2017-05-05"))), color = "blue", linetype = "longdash") +
+  # geom_vline(xintercept = c(as.numeric(as.Date("2016-03-19")), as.numeric(as.Date("2016-03-27"))), color = "purple", linetype = "longdash") +
+  scale_x_date(date_breaks = '1 month', limits = c(as.Date("2015-08-19"), as.Date("2016-08-16")), date_labels = "%B") +
+  labs(title = "2015-2016 Berkeley School Year", x = "Month", y = "Max Gym Attendance")
 
 
 
