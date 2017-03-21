@@ -137,7 +137,7 @@ test  <- gym_df[-split_index, ]
 model <- lm(number_people ~ timestamp + year + month + day_of_week + temperature + hour + semester + major_holiday + holiday_recess + academic_holiday + week + is_holiday + is_start_of_semester + is_during_semester, data = gym_df)
 
 #random forest
-model <- randomForest(number_people ~ day_of_week + temperature + precipitation + hour + semester + start_semester + during_semester + major_holiday + holiday_recess + academic_holiday + week, data = train, ntree = 30)
+model <- randomForest(number_people ~ day_of_week + temperature + precipitation + hour + semester + start_semester + during_semester + major_holiday + holiday_recess + academic_holiday + week, data = train, ntree = 40)
 
 predictions <- predict(model, test)
 summary(lm(test$number_people ~ predictions))
