@@ -9,9 +9,13 @@ setwd("~/Data Science Projects/gymtraffic")
 
 # Load csv
 gym_df <- read.csv("data/data.csv")
+precipitation <- read.csv("data/precipitation.csv")
 
 # Load libraries
 library(lubridate)
+library(caret)
+library(randomForest)
+library(e1071)
 
 
 
@@ -22,17 +26,26 @@ gym_df$date <- as.Date(substr(gym_df$date, 1, 10))
 
 
 # Limit date range
-start_date <- ymd(20150826)
-end_date <- ymd(20160513)
+start_date <- ymd(20150819)
+end_date <- ymd(20160816)
 gym_df <- gym_df[gym_df$date %within% interval(start_date, end_date), ]
 
 
 # Remove variables
-gym_df$is_holiday <- NULL
-gym_df$is_start_of_semester <- NULL
+# gym_df$is_holiday <- NULL
+# gym_df$is_start_of_semester <- NULL
 gym_df$is_during_semester <- NULL
 gym_df$is_weekend <- NULL
 
+
+# Prepare precipitation data
+precipitation$date <- ymd(precipitation$DATE)
+precipitation$precipitation <- precipitation$PRCP
+precipitation <- precipitation[, c("date", "precipitation")]
+
+
+# Merge precipitation data
+gym_df <- merge(gym_df, precipitation, by.x = "date", by.y = "date")
 
 
 
@@ -40,13 +53,33 @@ gym_df$is_weekend <- NULL
 
 # Create semester variable
 semester_interval <- list(interval("2015-08-26", "2015-12-18"),
-                          interval("2016-01-19", "2016-05-13"),
+                          interval("2016-01-17", "2016-05-13"),
                           interval("2016-05-23", "2016-08-12"))
 semester_start <- as.Date(rapply(semester_interval, function(x) as.Date(int_start(x))), origin="1970-01-01")
 gym_df$semester <- 0
 gym_df$semester[gym_df$date %within% semester_interval[[1]]] <- 1
 gym_df$semester[gym_df$date %within% semester_interval[[2]]] <- 2
 gym_df$semester[gym_df$date %within% semester_interval[[3]]] <- 3
+
+
+# Create during semester variable
+during_semester_interval <- list(interval("2015-08-19", "2015-12-18"),
+                                 interval("2016-01-12", "2016-05-13"),
+                                 interval("2016-05-23", "2016-08-12"))
+gym_df$during_semester <- 0
+gym_df$during_semester[gym_df$date %within% during_semester_interval[[1]]] <- 1
+gym_df$during_semester[gym_df$date %within% during_semester_interval[[2]]] <- 1
+gym_df$during_semester[gym_df$date %within% during_semester_interval[[3]]] <- 1
+
+
+# Create start of semester variable
+start_semester_interval <- list(interval("2015-08-19", ymd(20150819) + 14),
+                                interval("2016-01-12", ymd(20160112) + 14),
+                                interval("2016-05-23", ymd(20160523) + 14))
+gym_df$start_semester <- 0
+gym_df$start_semester[gym_df$date %within% start_semester_interval[[1]]] <- 1
+gym_df$start_semester[gym_df$date %within% start_semester_interval[[2]]] <- 1
+gym_df$start_semester[gym_df$date %within% start_semester_interval[[3]]] <- 1
 
 
 # Create major holiday variable
@@ -72,7 +105,7 @@ gym_df$holiday <- ifelse(rowSums(gym_df[, grep("holiday", names(gym_df))]) > 0, 
 holiday_dates <- aggregate(cbind(semester, holiday) ~ date, gym_df, mean)
 holiday_dates <- cbind(holiday_dates, holiday_sum = ave(holiday_dates$holiday, holiday_dates$semester, FUN = cumsum))
 holiday_dates <- holiday_dates[, c("date", "holiday_sum")]
-gym_df <- merge(holiday_dates, gym_df, by.x = "date", by.y = "date")
+gym_df <- merge(gym_df, holiday_dates, by.x = "date", by.y = "date")
 
 
 # Create week variable
@@ -80,20 +113,38 @@ gym_df$week <- 0
 gym_df$week[gym_df$semester != 0] <- ceiling(difftime(gym_df$date[gym_df$semester != 0] - gym_df$holiday_sum[gym_df$semester != 0] + 1, semester_start[gym_df$semester[gym_df$semester != 0]]) / 7)
 
 
+# Create year variable
+gym_df$year <- year(gym_df$date)
+
+
+
 
 # Modeling Test -----------------------------------------------------------
 
 # Convert variables to factors
-cols_factors <- c("day_of_week", "month", "hour", "semester", "week")
+cols_factors <- c("day_of_week", "month", "hour", "semester", "week", "year")
 gym_df[, cols_factors] <- lapply(gym_df[, cols_factors], as.factor)
 
-model <- lm(number_people ~ day_of_week + temperature + hour + semester + major_holiday + holiday_recess + academic_holiday + week, data = gym_df)
+#create a split index
+split_index <- createDataPartition(gym_df$number_people, p = .75, list = FALSE)
 
-predict(model)
+#create train and test sets
+train <- gym_df[split_index, ]
+test  <- gym_df[-split_index, ]
 
 
+#linear model
+model <- lm(number_people ~ timestamp + year + month + day_of_week + temperature + hour + semester + major_holiday + holiday_recess + academic_holiday + week + is_holiday + is_start_of_semester + is_during_semester, data = gym_df)
 
+#random forest
+model <- randomForest(number_people ~ day_of_week + temperature + precipitation + hour + semester + start_semester + during_semester + major_holiday + holiday_recess + academic_holiday + week, data = train, ntree = 30)
 
+predictions <- predict(model, test)
+summary(lm(test$number_people ~ predictions))
+varImpPlot(model)
+
+#support vector regression
+model <- svm(number_people ~ timestamp + year + month + day_of_week + temperature + hour + semester + major_holiday + holiday_recess + academic_holiday + week + is_start_of_semester + is_during_semester, data = train, scale = FALSE)
 
 
 
