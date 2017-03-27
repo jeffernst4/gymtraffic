@@ -121,7 +121,7 @@ gym_df$holiday_sum <- NULL
 # Save Dataset ------------------------------------------------------------
 
 # Save file
-save(gym_df, file = "raw_data.RData")
+save(gym_df, file = "data/raw_data.RData")
 
 
 
