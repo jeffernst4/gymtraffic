@@ -80,7 +80,6 @@ gym_df$holiday_recess <- ifelse(gym_df$date %within% holiday_recess, 1, 0)
 academic_holidays <- c(ymd(20150907), ymd(20151111), ymd(20151125), ymd(20151127), ymd(20160118), ymd(20160215))
 gym_df$academic_holiday <- ifelse(gym_df$date %in% academic_holidays, 1, 0)
 
-
 # Create academic variable
 gym_df$holiday <- ifelse(rowSums(gym_df[, grep("holiday", names(gym_df))]) > 0, 1, 0)
 
@@ -124,7 +123,23 @@ gym_df$holiday_sum <- NULL
 save(gym_df, file = "data/raw_data.RData")
 
 
+# Create 7-Day Rolling Average --------------------------------------------
 
-# Create Weekly Dataset ---------------------------------------------------
+# Create moving average function
+ma <- function(x, n = 7){filter(x, rep(1/n, n), sides = 2)}
 
-gym_df$week <- floor(difftime(gym_df$date, int_start(year_interval)) / ddays(7) + 1)
+# Create 7-day moving average for gym attendance
+gym_df_daily <- data.frame(aggregate(number_people ~ date, gym_df[gym_df$hour %in% 12:18, ], mean))
+gym_df_ma <- data.frame(na.omit(ma(ts(gym_df_daily), 7)))
+names(gym_df_ma) <- c("date", "number_people")
+gym_df_ma$date <- as.Date(gym_df_ma$date, origin = "1970-01-01")
+
+
+
+# Save Dataset ------------------------------------------------------------
+
+# Save file
+save(gym_df_ma, file = "data/ma_data.RData")
+
+
+
