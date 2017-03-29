@@ -76,19 +76,14 @@ p3 <- p3 +
     axis.text.y = element_text(margin = margin(0, 10, 0, 0)),
     axis.ticks = element_blank())
 
+
+
+# Save Visualizations -----------------------------------------------------
+
+# Set environment, select plot, and save plot
 png(filename = "plot3.png", width = 3000, height = 1600)
 p3
 dev.off()
-
-# Attendance by date with dashed lines showing breaks, holidays, and semester start/end for 15-16 school year
-p3 <- ggplot(aggregate(cbind(number_people, predictions) ~ date, gym_df, mean), aes(date))
-p3 + geom_area(aes(y = number_people), color = "#AA4488", fill = "#AA4488", alpha = .3) +
-  geom_line(aes(y = predictions), color = "black") +
-  scale_x_date(date_breaks = '1 month', limits = c(ymd(20150819), ymd(20160816)), date_labels = "%B", expand = c(.02, 0)) +
-  labs(title = "2015-2016 Berkeley Gym Attendance", x = "Month", y = "Max Gym Attendance") +
-  theme(axis.text = element_text(family = "Trebuchet MS", color = "#333333", size = 9)) +
-  theme(axis.title = element_text(family = "Trebuchet MS", color = "#333333", face = "bold", size = 12)) +
-  theme(plot.title = element_text(family = "Trebuchet MS", color = "#333333", face = "bold", size = 16))
 
 
 
