@@ -85,9 +85,3 @@ png(filename = "plot3.png", width = 3000, height = 1600)
 p3
 dev.off()
 
-
-
-
-
-
-
