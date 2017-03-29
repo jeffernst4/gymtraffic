@@ -8,7 +8,7 @@ rm(list=ls())
 setwd("~/Data Science Projects/gymtraffic")
 
 # Load data
-load("raw_data.RData")
+load("data/raw_data.RData")
 
 # Load libraries
 library(lubridate)
@@ -32,7 +32,7 @@ test  <- gym_df[-split_index, ]
 # Random Forest Model -----------------------------------------------------
 
 # Create model
-rf_model <- randomForest(number_people ~ . - date, data = train, ntree = 50)
+rf_model <- randomForest(number_people ~ . - date - timestamp - temperature, data = train, ntree = 50)
 
 # Examine important variables
 varImpPlot(rf_model)
