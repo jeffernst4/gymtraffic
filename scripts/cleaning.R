@@ -123,6 +123,7 @@ gym_df$holiday_sum <- NULL
 save(gym_df, file = "data/raw_data.RData")
 
 
+
 # Create 7-Day Rolling Average --------------------------------------------
 
 # Create moving average function
@@ -143,3 +144,19 @@ save(gym_df_ma, file = "data/ma_data.RData")
 
 
 
+# Calculate Hourly Data ---------------------------------------------------
+
+# Calculate hourly attendance and temperature
+attendance_hourly <- aggregate(number_people ~ hour + date, gym_df, mean)
+temperature_hourly <- aggregate(temperature ~ hour + date, gym_df, mean)
+observations_hourly <- aggregate(temperature ~ hour + date, gym_df, length)
+
+# Create data frame
+gym_df_hourly <- data.frame(attendance_hourly, temperature = temperature_hourly[, 3], observations = observations_hourly[, 3])
+
+
+
+# Save Dataset ------------------------------------------------------------
+
+# Save file
+save(gym_df_hourly, file = "data/hourly_data.RData")
