@@ -10,6 +10,7 @@ setwd("~/Data Science Projects/gymtraffic")
 # Load data
 load("data/raw_data.RData")
 load("data/ma_data.RData")
+load("data/hourly_data.RData")
 
 # Load libraries
 library(ggplot2)
@@ -21,7 +22,7 @@ library(lubridate)
 
 # Daily attendance visualization #1
 p1 <- ggplot(aggregate(number_people ~ date, gym_df, mean), aes(date, number_people))
-p1 +
+p1 <- p1 +
   geom_area(color = "#AA4488", fill = "#AA4488", alpha = .3) +
   scale_x_date(
     date_breaks = '1 month',
@@ -37,7 +38,7 @@ p1 +
 
 # Daily attendance visualization #2
 p2 <- ggplot(aggregate(number_people ~ date, gym_df, mean), aes(date, number_people))
-p2 +
+p2 <- p2 +
   geom_line(color = "#3062B3") +
   scale_x_date(
     date_breaks = '1 month',
@@ -63,7 +64,7 @@ p3 <- p3 +
     date_labels = "%B",
     expand = c(.02, 0)) +
   scale_y_continuous(
-    breaks = seq(0, 80, 10),
+    breaks = seq(0, 90, 10),
     limits = c(0, 80)) +
   labs(
     title = "",
@@ -81,7 +82,7 @@ p3 <- p3 +
 # Save Visualizations -----------------------------------------------------
 
 # Set environment, select plot, and save plot
-png(filename = "plot3.png", width = 3000, height = 1600)
+png(filename = "visualizations/plot3.png", width = 3000, height = 1600)
 p3
 dev.off()
 
